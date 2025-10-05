@@ -5,6 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { createHash } from 'crypto';
 
 dotenv.config();
 
@@ -41,9 +42,19 @@ async function testNoSelect() {
   }
 
   // Test workflow insert too
+  const workflowData = JSON.stringify({
+    nodes: [
+      { id: '1', type: 'webhook', parameters: {} },
+      { id: '2', type: 'http', parameters: {} },
+      { id: '3', type: 'slack', parameters: {} }
+    ],
+    connections: {}
+  });
+  const workflowHash = createHash('sha256').update(workflowData).digest('hex');
+
   const testWorkflow = {
     user_id: 'test-' + Date.now(),
-    workflow_hash: 'hash-' + Date.now(),
+    workflow_hash: workflowHash,
     node_count: 3,
     node_types: ['webhook', 'http', 'slack'],
     has_trigger: true,

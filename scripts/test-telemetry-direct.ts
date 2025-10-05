@@ -5,15 +5,22 @@
 
 import { createClient } from '@supabase/supabase-js';
 
+// Telemetry backend configuration - requires explicit environment variables
 const TELEMETRY_BACKEND = {
-  URL: 'https://ydyufsohxdfpopqbubwk.supabase.co',
-  ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkeXVmc29oeGRmcG9wcWJ1YndrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc2MzAxMDgsImV4cCI6MjA1MzIwNjEwOH0.LsUTx9OsNtnqg-jxXaJPc84aBHVDehHiMaFoF2Ir8s0'
+  URL: process.env.SUPABASE_URL || process.env.TELEMETRY_BACKEND_URL,
+  ANON_KEY: process.env.SUPABASE_ANON_KEY || process.env.TELEMETRY_BACKEND_ANON_KEY
 };
+
+// Validate configuration
+if (!TELEMETRY_BACKEND.URL || !TELEMETRY_BACKEND.ANON_KEY) {
+  console.error('❌ Telemetry configuration required. Set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  process.exit(1);
+}
 
 async function testDirect() {
   console.log('🧪 Direct Telemetry Test\n');
 
-  const supabase = createClient(TELEMETRY_BACKEND.URL, TELEMETRY_BACKEND.ANON_KEY, {
+  const supabase = createClient(TELEMETRY_BACKEND.URL!, TELEMETRY_BACKEND.ANON_KEY!, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,

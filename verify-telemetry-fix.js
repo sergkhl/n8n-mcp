@@ -8,10 +8,20 @@
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
 
+// Load environment variables
+require('dotenv').config();
+
+// Telemetry backend configuration - requires explicit environment variables
 const TELEMETRY_BACKEND = {
-  URL: 'https://ydyufsohxdfpopqbubwk.supabase.co',
-  ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkeXVmc29oeGRmcG9wcWJ1YndrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3OTYyMDAsImV4cCI6MjA3NDM3MjIwMH0.xESphg6h5ozaDsm4Vla3QnDJGc6Nc_cpfoqTHRynkCk'
+  URL: process.env.SUPABASE_URL || process.env.TELEMETRY_BACKEND_URL,
+  ANON_KEY: process.env.SUPABASE_ANON_KEY || process.env.TELEMETRY_BACKEND_ANON_KEY
 };
+
+// Validate configuration
+if (!TELEMETRY_BACKEND.URL || !TELEMETRY_BACKEND.ANON_KEY) {
+  console.error('❌ Telemetry configuration required. Set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.');
+  process.exit(1);
+}
 
 async function verifyTelemetryFix() {
   console.log('🔍 VERIFYING TELEMETRY PERMISSIONS FIX');
@@ -55,7 +65,13 @@ async function verifyTelemetryFix() {
       .from('telemetry_workflows')
       .insert([{
         user_id: testUserId,
-        workflow_hash: 'verify-' + crypto.randomBytes(4).toString('hex'),
+        workflow_hash: crypto.createHash('sha256').update(JSON.stringify({
+          nodes: [
+            { id: '1', type: 'n8n-nodes-base.webhook', parameters: {} },
+            { id: '2', type: 'n8n-nodes-base.set', parameters: {} }
+          ],
+          connections: {}
+        })).digest('hex'),
         node_count: 2,
         node_types: ['n8n-nodes-base.webhook', 'n8n-nodes-base.set'],
         has_trigger: true,
@@ -86,7 +102,16 @@ async function verifyTelemetryFix() {
   // Test 3: Upsert operation (like real telemetry)
   console.log('📝 Test 3: Upsert operation');
   try {
-    const workflowHash = 'upsert-verify-' + crypto.randomBytes(4).toString('hex');
+    // Generate a proper 64-character SHA-256 hash
+    const workflowData = JSON.stringify({
+      nodes: [
+        { id: '1', type: 'n8n-nodes-base.webhook', parameters: {} },
+        { id: '2', type: 'n8n-nodes-base.set', parameters: {} },
+        { id: '3', type: 'n8n-nodes-base.if', parameters: {} }
+      ],
+      connections: {}
+    });
+    const workflowHash = crypto.createHash('sha256').update(workflowData).digest('hex');
 
     const { data, error } = await supabase
       .from('telemetry_workflows')

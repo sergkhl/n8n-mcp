@@ -65,7 +65,7 @@ export class TelemetryManager {
   }
 
   /**
-   * Initialize telemetry if enabled
+   * Initialize telemetry if enabled and configured
    */
   private initialize(): void {
     if (!this.configManager.isEnabled()) {
@@ -73,10 +73,14 @@ export class TelemetryManager {
       return;
     }
 
-    // Use hardcoded credentials for zero-configuration telemetry
-    // Environment variables can override for development/testing
-    const supabaseUrl = process.env.SUPABASE_URL || TELEMETRY_BACKEND.URL;
-    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || TELEMETRY_BACKEND.ANON_KEY;
+    // Check if telemetry backend is configured
+    if (!TELEMETRY_BACKEND) {
+      logger.debug('Telemetry disabled - no backend configuration provided');
+      return;
+    }
+
+    // Use configured credentials
+    const { URL: supabaseUrl, ANON_KEY: supabaseAnonKey } = TELEMETRY_BACKEND;
 
     try {
       this.supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -250,10 +254,10 @@ export class TelemetryManager {
 
 
   /**
-   * Check if telemetry is enabled
+   * Check if telemetry is enabled and configured
    */
   private isEnabled(): boolean {
-    return this.isInitialized && this.configManager.isEnabled();
+    return this.isInitialized && this.configManager.isEnabled() && !!TELEMETRY_BACKEND;
   }
 
   /**

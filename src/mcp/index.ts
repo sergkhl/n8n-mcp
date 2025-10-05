@@ -63,15 +63,12 @@ async function main() {
       case 'enable':
         telemetryConfig.enable();
         process.exit(0);
-        break;
       case 'disable':
         telemetryConfig.disable();
         process.exit(0);
-        break;
       case 'status':
         console.log(telemetryConfig.getStatus());
         process.exit(0);
-        break;
       default:
         console.log(`
 Usage: n8n-mcp telemetry [command]
@@ -96,7 +93,7 @@ Learn more: https://github.com/czlonkowski/n8n-mcp/blob/main/PRIVACY.md
       console.error('Current directory:', process.cwd());
       console.error('Node version:', process.version);
     }
-    
+
     if (mode === 'http') {
       // Check if we should use the fixed implementation
       if (process.env.USE_FIXED_HTTP === 'true') {
@@ -107,16 +104,16 @@ Learn more: https://github.com/czlonkowski/n8n-mcp/blob/main/PRIVACY.md
         // HTTP mode - for remote deployment with single-session architecture
         const { SingleSessionHTTPServer } = await import('../http-server-single-session');
         const server = new SingleSessionHTTPServer();
-        
+
         // Graceful shutdown handlers
         const shutdown = async () => {
           await server.shutdown();
           process.exit(0);
         };
-        
+
         process.on('SIGTERM', shutdown);
         process.on('SIGINT', shutdown);
-        
+
         await server.start();
       }
     } else {
@@ -190,7 +187,7 @@ Learn more: https://github.com/czlonkowski/n8n-mcp/blob/main/PRIVACY.md
     if (mode !== 'stdio') {
       console.error('Failed to start MCP server:', error);
       logger.error('Failed to start MCP server', error);
-      
+
       // Provide helpful error messages
       if (error instanceof Error && error.message.includes('nodes.db not found')) {
         console.error('\nTo fix this issue:');
@@ -204,7 +201,7 @@ Learn more: https://github.com/czlonkowski/n8n-mcp/blob/main/PRIVACY.md
         console.error('3. If that doesn\'t work, try: rm -rf node_modules && npm install');
       }
     }
-    
+
     process.exit(1);
   }
 }
