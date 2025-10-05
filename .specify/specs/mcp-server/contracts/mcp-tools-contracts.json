@@ -1,0 +1,301 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MCP Tools API Contracts",
+  "description": "OpenAPI-style contracts for MCP tool interfaces",
+  "version": "1.0.0",
+  "tools": {
+    "search_nodes": {
+      "description": "Full-text search across n8n node documentation and properties",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query (supports fuzzy matching)",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "category": {
+            "type": "string",
+            "enum": ["trigger", "action", "communication", "data", "helper"],
+            "description": "Filter by node category"
+          },
+          "package": {
+            "type": "string",
+            "enum": ["n8n-nodes-base", "n8n-nodes-langchain"],
+            "description": "Filter by package"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 10,
+            "description": "Maximum results to return"
+          },
+          "includeExamples": {
+            "type": "boolean",
+            "default": false,
+            "description": "Include real-world configuration examples"
+          }
+        },
+        "required": ["query"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "nodes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": "string",
+                "name": "string",
+                "description": "string",
+                "category": "string",
+                "package": "string",
+                "examples": {
+                  "type": "array",
+                  "items": "object"
+                }
+              }
+            }
+          },
+          "total": "integer",
+          "queryTime": "number"
+        }
+      },
+      "performance": {
+        "averageResponseTime": "< 100ms",
+        "successRate": "> 99.9%",
+        "rateLimit": "100 requests/minute"
+      }
+    },
+    "get_node_essentials": {
+      "description": "Get essential properties for node configuration (95% smaller than full schema)",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "nodeType": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]+\\.[a-zA-Z0-9_-]+$",
+            "description": "Node type identifier (e.g., n8n-nodes-base.slack)"
+          },
+          "includeExamples": {
+            "type": "boolean",
+            "default": false,
+            "description": "Include top 3 real-world configurations from templates"
+          }
+        },
+        "required": ["nodeType"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "nodeType": "string",
+          "displayName": "string",
+          "description": "string",
+          "version": "number",
+          "category": "string",
+          "essentials": {
+            "type": "object",
+            "properties": {
+              "required": "array",
+              "recommended": "array",
+              "examples": "array"
+            }
+          }
+        }
+      },
+      "performance": {
+        "averageResponseTime": "< 50ms",
+        "cacheable": true,
+        "compression": "gzip"
+      }
+    },
+    "validate_node_operation": {
+      "description": "Validate node configuration with operation-aware rules",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "nodeType": "string",
+          "config": "object",
+          "profile": {
+            "type": "string",
+            "enum": ["minimal", "runtime", "ai-friendly", "strict"],
+            "default": "runtime"
+          }
+        },
+        "required": ["nodeType", "config"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "isValid": "boolean",
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": "string",
+                "message": "string",
+                "suggestion": "string"
+              }
+            }
+          },
+          "warnings": "array",
+          "performance": "object"
+        }
+      }
+    },
+    "validate_workflow": {
+      "description": "Complete workflow validation including connections and expressions",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "workflow": {
+            "type": "object",
+            "properties": {
+              "nodes": "array",
+              "connections": "object",
+              "settings": "object"
+            },
+            "required": ["nodes", "connections"]
+          }
+        },
+        "required": ["workflow"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "isValid": "boolean",
+          "nodeErrors": "object",
+          "connectionErrors": "array",
+          "expressionErrors": "array",
+          "aiToolValidation": "object",
+          "performanceScore": "number"
+        }
+      }
+    },
+    "get_template": {
+      "description": "Retrieve complete workflow template with configuration",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "templateId": "string",
+          "mode": {
+            "type": "string",
+            "enum": ["minimal", "full", "with-examples"],
+            "default": "full"
+          }
+        },
+        "required": ["templateId"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "id": "string",
+          "name": "string",
+          "description": "string",
+          "workflow": "object",
+          "author": "object",
+          "metadata": "object",
+          "examples": "array"
+        }
+      }
+    },
+    "n8n_create_workflow": {
+      "description": "Create new workflow via n8n API (requires API credentials)",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": "string",
+          "nodes": "array",
+          "connections": "object",
+          "settings": "object",
+          "tags": "array"
+        },
+        "required": ["name", "nodes", "connections"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "id": "string",
+          "name": "string",
+          "createdAt": "string",
+          "validation": "object"
+        }
+      },
+      "errors": {
+        "401": "API credentials not configured",
+        "403": "Insufficient permissions",
+        "422": "Invalid workflow structure"
+      }
+    },
+    "n8n_update_partial_workflow": {
+      "description": "Apply diff operations to existing workflow",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": "string",
+          "operations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": "string",
+                "nodeId": "string",
+                "nodeName": "string",
+                "updates": "object"
+              },
+              "required": ["type"]
+            }
+          }
+        },
+        "required": ["id", "operations"]
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "success": "boolean",
+          "operationsApplied": "number",
+          "errors": "array",
+          "workflow": "object"
+        }
+      }
+    }
+  },
+  "common": {
+    "error_response": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": "string",
+            "message": "string",
+            "details": "object"
+          }
+        },
+        "requestId": "string"
+      }
+    },
+    "pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 10
+        },
+        "cursor": "string",
+        "total": "integer"
+      }
+    },
+    "rate_limits": {
+      "documentation": "1000 requests/hour",
+      "validation": "100 requests/minute",
+      "n8n_api": "Rate limited by n8n instance"
+    }
+  }
+}
