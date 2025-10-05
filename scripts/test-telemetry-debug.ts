@@ -6,6 +6,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { createHash } from 'crypto';
 
 // Load environment variables
 dotenv.config();
@@ -57,9 +58,19 @@ async function debugTelemetry() {
 
   // Test 2: Direct insert to telemetry_workflows
   console.log('\n📝 Test 2: Direct insert to telemetry_workflows...');
+  const workflowData = JSON.stringify({
+    nodes: [
+      { id: '1', type: 'webhook', parameters: {} },
+      { id: '2', type: 'http', parameters: {} },
+      { id: '3', type: 'slack', parameters: {} }
+    ],
+    connections: {}
+  });
+  const workflowHash = createHash('sha256').update(workflowData).digest('hex');
+
   const testWorkflow = {
     user_id: 'test-user-123',
-    workflow_hash: 'test-hash-' + Date.now(),
+    workflow_hash: workflowHash,
     node_count: 3,
     node_types: ['webhook', 'http', 'slack'],
     has_trigger: true,

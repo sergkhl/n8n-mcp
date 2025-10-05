@@ -76,15 +76,12 @@ async function main() {
       case 'enable':
         telemetryConfig.enable();
         process.exit(0);
-        break;
       case 'disable':
         telemetryConfig.disable();
         process.exit(0);
-        break;
       case 'status':
         console.log(telemetryConfig.getStatus());
         process.exit(0);
-        break;
       default:
         console.log(`
 Usage: n8n-mcp telemetry [command]
@@ -122,7 +119,7 @@ Learn more: https://github.com/czlonkowski/n8n-mcp/blob/main/PRIVACY.md
     // Checkpoint: MCP handshake starting (fire-and-forget, no await)
     earlyLogger.logCheckpoint(STARTUP_CHECKPOINTS.MCP_HANDSHAKE_STARTING);
     checkpoints.push(STARTUP_CHECKPOINTS.MCP_HANDSHAKE_STARTING);
-    
+
     if (mode === 'http') {
       // Check if we should use the fixed implementation
       if (process.env.USE_FIXED_HTTP === 'true') {
@@ -133,16 +130,16 @@ Learn more: https://github.com/czlonkowski/n8n-mcp/blob/main/PRIVACY.md
         // HTTP mode - for remote deployment with single-session architecture
         const { SingleSessionHTTPServer } = await import('../http-server-single-session');
         const server = new SingleSessionHTTPServer();
-        
+
         // Graceful shutdown handlers
         const shutdown = async () => {
           await server.shutdown();
           process.exit(0);
         };
-        
+
         process.on('SIGTERM', shutdown);
         process.on('SIGINT', shutdown);
-        
+
         await server.start();
       }
     } else {
